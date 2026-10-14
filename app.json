@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Mimo",
+    "slug": "mimo",
+    "scheme": "mimo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "android": { "package": "com.mimo.babytracker" },
+    "plugins": ["expo-router", "expo-secure-store"],
+    "experiments": { "typedRoutes": false }
+  }
+}
