@@ -1,4 +1,5 @@
-import { EventRow, FOOD_UNIT_LABEL, MILK_TYPE_LABEL, categoryMeta, fmtDur } from '@/lib/eventText';
+import { EventRow, FOOD_UNIT_LABEL, MILK_TYPE_LABEL, categoryMeta, doseText, fmtDur, tempText } from '@/lib/eventText';
+import { TEMP_METHOD_LABEL } from '@/lib/health';
 import { fmtAmount } from '@/lib/volume';
 
 const DIAPER_EMOJI: Record<string, string> = { wet: '💧', dirty: '💩', mixed: '💧💩', dry: '☁️' };
@@ -24,6 +25,13 @@ export function briefEvent(e: EventRow): { emoji: string; title: string; detail:
       const amount = p.amount?.value ? `${p.amount.value} ${FOOD_UNIT_LABEL[p.amount.unit] ?? p.amount.unit ?? ''}`.trim() : null;
       return { emoji: meta.emoji, title: 'Solids', detail: [names, amount].filter(Boolean).join(' · ') || null };
     }
+    case 'medicine':
+      return { emoji: meta.emoji, title: 'Medicine', detail: [typeof p.name === 'string' ? p.name : null, doseText(p.dose)].filter(Boolean).join(' · ') || null };
+    case 'temperature':
+      return { emoji: meta.emoji, title: 'Temperature', detail: [tempText(p), e.subtype ? TEMP_METHOD_LABEL[e.subtype] : null].filter(Boolean).join(' · ') || null };
+    case 'bath':
+    case 'tummy_time':
+      return { emoji: meta.emoji, title: meta.label, detail: typeof p.duration_ms === 'number' && p.duration_ms > 0 ? fmtDur(p.duration_ms) : null };
     default:
       return { emoji: meta.emoji, title: meta.label, detail: e.subtype ? cap(e.subtype) : null };
   }

@@ -9,6 +9,10 @@ import { useSession } from '@/store/session';
 import { useEventActions } from '@/features/events/eventActions';
 import { BottleDraft, BottleFields, bottleFromEvent, bottleToFields, validateBottle } from '@/features/log/bottle';
 import { SolidsDraft, SolidsFields, solidsFromEvent, solidsToFields, validateSolids } from '@/features/log/solids';
+import { TempDraft, TemperatureFields, tempFromEvent, tempToFields, validateTemp } from '@/features/log/temperature';
+import { MedicineDraft, MedicineFields, medicineFromEvent, medicineToFields, validateMedicine } from '@/features/log/medicine';
+import { CareDraft, CareFields, careFromEvent, careToFields, validateCare } from '@/features/log/care';
+import { tempUnitFor } from '@/lib/health';
 import { useColors, font } from '@/theme';
 
 export interface EditorProps { event: EventDetail; onDone: () => void; onCancel: () => void }
@@ -140,6 +144,41 @@ function SolidsEditor({ event, onDone, onCancel }: EditorProps) {
   );
 }
 
+function TemperatureEditor({ event, onDone, onCancel }: EditorProps) {
+  const child = useSession((s) => s.children.find((k) => k.id === event.child_id));
+  const [draft, setDraft] = useState<TempDraft>(() => tempFromEvent(event, tempUnitFor(child)));
+  const ed = useEditor(event, JSON.stringify({ ...draft, when: draft.when.getTime() }), onDone, onCancel);
+  return (
+    <>
+      <TemperatureFields draft={draft} onChange={(p) => setDraft((d) => ({ ...d, ...p }))} />
+      <Footer ed={ed} onSave={() => ed.save(() => validateTemp(draft), () => tempToFields(draft))} />
+    </>
+  );
+}
+
+function MedicineEditor({ event, onDone, onCancel }: EditorProps) {
+  const [draft, setDraft] = useState<MedicineDraft>(() => medicineFromEvent(event));
+  const ed = useEditor(event, JSON.stringify({ ...draft, when: draft.when.getTime() }), onDone, onCancel);
+  return (
+    <>
+      <MedicineFields draft={draft} onChange={(p) => setDraft((d) => ({ ...d, ...p }))} childId={event.child_id} />
+      <Footer ed={ed} onSave={() => ed.save(() => validateMedicine(draft), () => medicineToFields(draft))} />
+    </>
+  );
+}
+
+/** Bath and tummy time: time, optional duration, note. */
+function CareEditor({ event, onDone, onCancel }: EditorProps) {
+  const [draft, setDraft] = useState<CareDraft>(() => careFromEvent(event));
+  const ed = useEditor(event, JSON.stringify({ ...draft, when: draft.when.getTime() }), onDone, onCancel);
+  return (
+    <>
+      <CareFields draft={draft} onChange={(p) => setDraft((d) => ({ ...d, ...p }))} />
+      <Footer ed={ed} onSave={() => ed.save(() => validateCare(draft), () => careToFields(draft))} />
+    </>
+  );
+}
+
 const mins = (ms: unknown) => (typeof ms === 'number' && ms > 0 ? String(round1(ms / 60000)) : '');
 
 /** Breastfeeding: edit start, per-side minutes and note. Edited sessions drop second-by-second segments and are flagged. */
@@ -208,6 +247,7 @@ function GenericEditor({ event, onDone, onCancel }: EditorProps) {
 
 const EDITORS: Record<string, React.ComponentType<EditorProps>> = {
   diaper: DiaperEditor, sleep: SleepEditor, bottle: BottleEditor, solids: SolidsEditor, breastfeeding: BreastEditor,
+  temperature: TemperatureEditor, medicine: MedicineEditor, bath: CareEditor, tummy_time: CareEditor,
 };
 
 export function EventEditor(props: EditorProps) {

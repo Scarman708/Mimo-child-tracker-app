@@ -9,19 +9,22 @@ import { AppBar } from '@/components/AppBar';
 import { Chip } from '@/components/Chip';
 import { EventActionSheet } from '@/components/EventActionSheet';
 import { canDuplicate, confirmDelete, useEventActions } from '@/features/events/eventActions';
-import { ChildEventRow, categoryMeta, describeEvent } from '@/lib/eventText';
+import { ChildEventRow, describeEvent } from '@/lib/eventText';
+import { briefEvent } from '@/lib/eventBrief';
 import { fmtTime } from '@/lib/format';
 import { useSession } from '@/store/session';
 import { useColors, font } from '@/theme';
 
 const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-const KNOWN = ['breastfeeding', 'bottle', 'solids', 'sleep', 'diaper'];
+const KNOWN = ['breastfeeding', 'bottle', 'solids', 'sleep', 'diaper', 'medicine', 'temperature', 'bath', 'tummy_time'];
 const FILTERS: { key: string; label: string; match: (cat: string) => boolean }[] = [
   { key: 'all', label: 'All', match: () => true },
   { key: 'feed', label: 'Feeds', match: (c) => c === 'breastfeeding' || c === 'bottle' },
   { key: 'solids', label: 'Solids', match: (c) => c === 'solids' },
   { key: 'sleep', label: 'Sleep', match: (c) => c === 'sleep' },
   { key: 'diaper', label: 'Diaper', match: (c) => c === 'diaper' },
+  { key: 'health', label: 'Health', match: (c) => c === 'medicine' || c === 'temperature' },
+  { key: 'care', label: 'Care', match: (c) => c === 'bath' || c === 'tummy_time' },
   { key: 'other', label: 'Other', match: (c) => !KNOWN.includes(c) },
 ];
 
@@ -89,14 +92,13 @@ export default function HistoryScreen() {
             <>
               <Text style={{ fontFamily: font.regular, fontSize: 13, color: c.textMuted, marginBottom: 8 }}>{shown.length} {shown.length === 1 ? 'entry' : 'entries'}</Text>
               {shown.map((e) => {
-                const meta = categoryMeta(e.category);
                 const range = e.ended_at && (e.category === 'sleep' || e.category === 'breastfeeding') ? `${t(e.started_at)} – ${t(e.ended_at)}` : t(e.started_at);
                 const who = e.creator_id === userId ? 'You' : e.creator_id ? 'Another caregiver' : null;
                 return (
                   <Card key={e.id} style={{ marginBottom: 8, padding: 0, flexDirection: 'row', alignItems: 'center' }}>
                     <Pressable accessibilityRole="button" accessibilityLabel={`${describeEvent(e)}, ${range}. Open details`} onPress={() => router.push(`/event/${e.id}`)}
                       style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, minHeight: 64 }}>
-                      <Text style={{ fontSize: 26 }}>{meta.emoji}</Text>
+                      <Text style={{ fontSize: 26 }}>{briefEvent(e).emoji}</Text>
                       <View style={{ flex: 1 }}>
                         <Text style={{ fontFamily: font.semibold, fontSize: 15, color: c.text }}>{describeEvent(e)}</Text>
                         <Text style={{ fontFamily: font.regular, fontSize: 13, color: c.textMuted }}>{range}{who ? ` · ${who}` : ''}</Text>

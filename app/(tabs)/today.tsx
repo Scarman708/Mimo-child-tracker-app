@@ -28,8 +28,8 @@ function LastCard({ label, tint, event, fmtTime, style }: {
     <Card tint={tint} style={style}>
       <View accessible accessibilityLabel={b ? `${label}: ${b.title}${b.detail ? `, ${b.detail}` : ''}, at ${time}` : `${label}: none yet`}>
         <Body muted>{label}</Body>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 4 }}>
-          {b ? <Text importantForAccessibility="no" style={{ fontSize: 28 }}>{b.emoji}</Text> : null}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
+          {b ? <Text importantForAccessibility="no" style={{ fontSize: 20 }}>{b.emoji}</Text> : null}
           <View style={{ flex: 1 }}>
             <Text numberOfLines={2} style={{ fontFamily: font.bold, fontSize: 17, color: c.text }}>{main}</Text>
             {sub ? <Text style={{ fontFamily: font.regular, fontSize: 13, color: c.textMuted }}>{sub}</Text> : null}

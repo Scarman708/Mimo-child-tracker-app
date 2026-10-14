@@ -1,5 +1,6 @@
 import { fmtTime } from '@/lib/format';
 import { fmtAmount, VolumeUnit } from '@/lib/volume';
+import { DOSE_UNIT_LABEL, TEMP_METHOD_LABEL, tempLabel } from '@/lib/health';
 
 export interface EventRow {
   id: string;
@@ -40,6 +41,10 @@ const CATEGORY_META: Record<string, { label: string; icon: string; emoji: string
   solids: { label: 'Solids', icon: 'nutrition', emoji: '🥣' },
   sleep: { label: 'Sleep', icon: 'moon', emoji: '😴' },
   diaper: { label: 'Diaper', icon: 'water', emoji: '💧' },
+  medicine: { label: 'Medicine', icon: 'medkit', emoji: '💊' },
+  temperature: { label: 'Temperature', icon: 'thermometer', emoji: '🌡️' },
+  bath: { label: 'Bath', icon: 'sparkles', emoji: '🛁' },
+  tummy_time: { label: 'Tummy time', icon: 'happy', emoji: '🧸' },
 };
 const cap = (s: string) => (s ? s[0].toUpperCase() + s.slice(1).replace(/_/g, ' ') : s);
 export function categoryMeta(category: string) {
@@ -65,6 +70,11 @@ const amountText = (a: any, kind: 'vol' | 'food'): string | null => {
   return `${a.value} ${FOOD_UNIT_LABEL[a.unit] ?? a.unit ?? ''}`.trim();
 };
 
+export const doseText = (d: any): string | null =>
+  d && d.value != null && d.value !== '' ? `${d.value} ${DOSE_UNIT_LABEL[d.unit] ?? d.unit ?? ''}`.trim() : null;
+export const tempText = (p: any): string | null =>
+  p && p.value != null && p.value !== '' ? `${p.value} ${tempLabel(p.unit)}` : null;
+
 /** One-line summary used in Today's recent activity and History rows. */
 export function describeEvent(e: EventRow): string {
   const p = (e.payload ?? {}) as any;
@@ -88,6 +98,17 @@ export function describeEvent(e: EventRow): string {
       const foods: string[] = Array.isArray(p.foods) ? p.foods : [];
       if (foods.length) return `Solids · ${foods.slice(0, 3).join(', ')}${foods.length > 3 ? ` +${foods.length - 3}` : ''}`;
       return `Solids · ${(e.subtype && FOOD_GROUP_LABEL[e.subtype]) || 'Food'}`;
+    }
+    case 'medicine':
+      return ['Medicine', typeof p.name === 'string' ? p.name : null, doseText(p.dose)].filter(Boolean).join(' · ');
+    case 'temperature': {
+      const t = tempText(p);
+      return t ? `Temperature · ${t}` : 'Temperature';
+    }
+    case 'bath':
+    case 'tummy_time': {
+      const label = categoryMeta(e.category).label;
+      return p.duration_ms > 0 ? `${label} · ${fmtDur(p.duration_ms)}` : label;
     }
     default: {
       const label = categoryMeta(e.category).label;
@@ -129,6 +150,21 @@ export function eventDetails(e: EventRow): { label: string; value: string }[] {
       add('Food group', e.subtype ? FOOD_GROUP_LABEL[e.subtype] : null);
       add('Foods', Array.isArray(p.foods) && p.foods.length ? p.foods.join(', ') : null);
       add('Amount', amountText(p.amount, 'food'));
+      break;
+    case 'temperature': {
+      const t = tempText(p);
+      add('Temperature', t && p.unit === 'f' && p.value_c != null ? `${t} (${p.value_c} °C)` : t);
+      add('Method', e.subtype ? TEMP_METHOD_LABEL[e.subtype] : null);
+      break;
+    }
+    case 'medicine':
+      add('Medicine', typeof p.name === 'string' ? p.name : null);
+      add('Dose', doseText(p.dose));
+      add('Reason', typeof p.reason === 'string' ? p.reason : null);
+      break;
+    case 'bath':
+    case 'tummy_time':
+      add('Duration', p.duration_ms ? fmtDur(p.duration_ms) : null);
       break;
   }
   return out;
